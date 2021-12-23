@@ -56,8 +56,6 @@ class LitModel(pl.LightningModule):
         self.loss = F.l1_loss
 
         # metrics
-        self.val_psnr = PSNR()
-        self.test_psnr = PSNR()
         self.val_ssim = SSIM()
         self.test_ssim = SSIM()
 
@@ -88,12 +86,13 @@ class LitModel(pl.LightningModule):
                 for patch in lr_list
             ], dim=0)
 
-        h, w = scale * h, scale * w
-        h_half, w_half = scale * h_half, scale * w_half
-        h_size, w_size = scale * h_size, scale * w_size
+        # multiply 2 because bayer size needs to be 2 times
+        h, w = scale * h * 2, scale * w * 2
+        h_half, w_half = scale * h_half * 2, scale * w_half * 2
+        h_size, w_size = scale * h_size * 2, scale * w_size * 2
         shave *= scale
 
-        output = x.new(b, c, h, w)
+        output = x.new(b, c-1, h, w) # channerl reducted from raw 4ch to rgb 3ch
         output[:, :, 0:h_half, 0:w_half] = sr_batch[0:b, :, 0:h_half, 0:w_half]
         output[:, :, 0:h_half, w_half:w] = sr_batch[b:b*2, :, 0:h_half, (w_size - w + w_half):w_size]
         output[:, :, h_half:h, 0:w_half] = sr_batch[b*2:b*3, :, (h_size - h + h_half):h_size, 0:w_half]
@@ -136,34 +135,27 @@ class LitModel(pl.LightningModule):
         sr = self(x)
         loss = self.loss(sr, y)
         sr = self._quantize(sr, self.rgb_range)
-        sr, y = self.rgb2ycbcr(sr, y, scale=self.scale, rgb_range=self.rgb_range)
-        psnr = self.val_psnr(sr, y)
-        legacy_psnr = self._psnr(sr, y, self.scale, self.rgb_range)
+        psnr = self._psnr(sr, y, self.scale, self.rgb_range)
         ssim = self.val_ssim(sr, y)
+
         self.log('valid/loss', loss, prog_bar=True)
         self.log('valid/psnr', psnr, prog_bar=True)
-        self.log('valid/legacy_psnr', legacy_psnr, prog_bar=True)
         self.log('valid/ssim', ssim, prog_bar=True)
 
     def validation_epoch_end(self, outputs) -> None:
         # to prevent memory leak 
         self.val_ssim.reset()
-        self.val_psnr.reset()
 
     def test_step(self, batch, batch_idx, dataloader_idx=0):
         x, y, filename = batch
         dataset_name = self.test_data[dataloader_idx]
         sr = self.forward_chop(x, min_size=self.chop_size)
         sr = self._quantize(sr, self.rgb_range)
-
-        # TODO check why legacy psnr fucntion and pl metric psnr show certain difference.
-        legacy_psnr = self._psnr(sr, y, self.scale, self.rgb_range)
-        sr, y = self.rgb2ycbcr(sr, y, scale=self.scale, rgb_range=self.rgb_range)
-        psnr = self.test_psnr(sr, y)
+        psnr = self._psnr(sr, y, self.scale, self.rgb_range)
         ssim = self.test_ssim(sr, y)
+        
         self.log('test/{}/psnr'.format(dataset_name), psnr, prog_bar=True)
         self.log('test/{}/ssim'.format(dataset_name), ssim, prog_bar=True)
-        self.log('test/{}/legacy_psnr'.format(dataset_name), legacy_psnr, prog_bar=True)
 
         if self.save_test_img:
             self._img_save(sr.clone().detach(), filename[0], dataset_name)
@@ -173,7 +165,6 @@ class LitModel(pl.LightningModule):
     def test_epoch_end(self, outputs) -> None:
         # to prevent memory leak 
         self.test_ssim.reset()
-        self.test_psnr.reset() 
 
     @staticmethod
     def _img_save(sr, filename, dataset_name):
@@ -204,20 +195,6 @@ class LitModel(pl.LightningModule):
         mse = valid.pow(2).mean()
 
         return -10 * math.log10(mse)
-
-    @staticmethod
-    def rgb2ycbcr(*args, scale, rgb_range=255):
-        def _rgb2ycbcr(img):
-            shave = scale
-            if img.size(1) > 1:
-                gray_coeffs = [65.738, 129.057, 25.064]
-                convert = img.new_tensor(gray_coeffs).view(1, 3, 1, 1) / 256
-                img = img.mul(convert)
-
-            valid = img[..., shave:-shave, shave:-shave]
-            return valid
-
-        return [_rgb2ycbcr(a) for a in args]
 
     @staticmethod
     def _quantize(img, rgb_range):

@@ -110,7 +110,7 @@ class RCAB(nn.Module):
     def forward(self, x):
         res = self.body(x)
         #res = self.body(x).mul(self.res_scale)
-        res += x
+        #res += x
         return res
 
 ## Residual Group (RG)
@@ -127,7 +127,7 @@ class ResidualGroup(nn.Module):
 
     def forward(self, x):
         res = self.body(x)
-        res += x
+        #res += x
         return res
 
 ## Holistic Attention Network (HAN)
@@ -198,7 +198,7 @@ class HAN_RAW(nn.Module):
         out = torch.cat([out1, out2], 1)
         res = self.last(out)
         
-        res += x
+        #res += x
         x = self.tail(res)
         x = self.add_mean(x)
 
