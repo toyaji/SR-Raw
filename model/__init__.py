@@ -179,6 +179,7 @@ class LitModel(pl.LightningModule):
         sr = sr.transpose(0, 2, 3, 1)
         for img in sr:
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            filename = filename.split('.')[0] + '.jpg'
             cv2.imwrite(str(save_path / filename), img)
 
     @staticmethod

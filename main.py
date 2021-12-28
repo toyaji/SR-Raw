@@ -1,4 +1,5 @@
 import warnings
+from pytorch_lightning.core import datamodule
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
@@ -30,16 +31,19 @@ def main(config):
                                         min_delta=config.callback.min_delta)
     lr_callback = LearningRateMonitor(logging_interval='epoch')
 
+    if config.dataset.test_only:
+        config.trainer.limit_train_batches=0
+        config.trainer.limit_val_batches=0
+
     trainer = Trainer(logger=logger, 
                       callbacks=[checkpoint_callback, early_stop_callback, lr_callback], 
                       **config.trainer
                       )
     
     # start training!
-    if not config.dataset.test_only:
-        trainer.fit(model, dm)
-    
-    trainer.test(model, datamodule=dm)
+    trainer.fit(model, dm)
+    trainer.test(model, datamodule=dm, ckpt_path='best')
+
 
     
 if __name__ == "__main__":
