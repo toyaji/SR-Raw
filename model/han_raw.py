@@ -109,7 +109,7 @@ class RCAB(nn.Module):
 
     def forward(self, x):
         res = self.body(x)
-        #res = self.body(x).mul(self.res_scale)
+        #res = self.body(x).mul(self.res_scale) # Skip connection인데 이걸 활용하면 Loss가 발산.
         #res += x
         return res
 

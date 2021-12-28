@@ -67,10 +67,7 @@ class RecurrentProjection(nn.Module):
             x_final = self.post_conv(self.down_sample_2(h_estimate))
 
         return x_final, h_estimate
-        
-
-        
-
+    
 
 class CSNLN_RAW(nn.Module):
     def __init__(self, args, conv=common.default_conv):
@@ -91,7 +88,8 @@ class CSNLN_RAW(nn.Module):
         
         # define head module
         m_head = [common.BasicBlock(conv, 4, n_feats, kernel_size,stride=1,bias=True,bn=False,act=nn.PReLU()),
-        common.BasicBlock(conv,n_feats, n_feats, kernel_size,stride=1,bias=True,bn=False,act=nn.PReLU())]
+                  common.BasicBlock(conv,n_feats, n_feats, kernel_size,stride=1,bias=True,bn=False,act=nn.PReLU()),
+                  common.BasicBlock(conv,n_feats, n_feats, kernel_size,stride=1,bias=True,bn=False,act=nn.PReLU())]
 
         # define Self-Exemplar Mining Cell
         self.SEM = RecurrentProjection(n_feats,scale = scale)
