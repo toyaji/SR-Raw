@@ -22,7 +22,8 @@ class ZoomRaw2RGB(SRData):
         if self.train:
             self.dir_hr = self.apath / 'train' / 'raw_HR'
         else:
-            self.dir_hr = self.apath / 'test' / 'raw_HR'    
+            self.dir_hr = self.apath / 'test' / 'raw_HR' 
+            self.patch_size = -1   
 
         assert self.dir_hr.exists(), "HR input data path does not exist!"
 
