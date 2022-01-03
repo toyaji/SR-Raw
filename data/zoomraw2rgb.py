@@ -6,10 +6,12 @@ from .srdata import SRData
 from . import common
 
 class ZoomRaw2RGB(SRData):
-    def __init__(self, dir, scale, name='ZoomRaw2RGB', train=True, patch_size=48, rgb_range=1, augment=True, **kwargs):
+    def __init__(self, dir, scale, name='ZoomRaw2RGB', train=True, val=True, patch_size=48, rgb_range=1, augment=True, **kwargs):
 
         super(ZoomRaw2RGB, self).__init__(dir=dir, scale=scale, name=name, train=train, patch_size=patch_size, 
                                     n_colors=3, rgb_range=rgb_range, augment=augment)
+        # seperate val set from test set because their patch sizes differ                         
+        self.val = val
 
     def _set_filesystem(self, data_dir):
         if isinstance(data_dir, str):
@@ -21,6 +23,8 @@ class ZoomRaw2RGB(SRData):
 
         if self.train:
             self.dir_hr = self.apath / 'train' / 'raw_HR'
+        elif self.train and self.val:
+            self.dir_hr = self.apath / 'test' / 'raw_HR' 
         else:
             self.dir_hr = self.apath / 'test' / 'raw_HR' 
             self.patch_size = -1   

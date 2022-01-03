@@ -36,7 +36,7 @@ class LitDataset(LightningDataModule):
             valsets = []
             for d in self.train_data:
                 m = import_module('data.' + d.lower())
-                valsets.append(getattr(m, d)(**self.args, train=False, name=d))
+                valsets.append(getattr(m, d)(**self.args, val=True, name=d))
 
             self.train_set = ConcatDataset(trainsets)
             self.val_set = ConcatDataset(valsets)           
