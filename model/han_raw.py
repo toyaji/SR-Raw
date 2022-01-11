@@ -110,7 +110,7 @@ class RCAB(nn.Module):
     def forward(self, x):
         res = self.body(x)
         #res = self.body(x).mul(self.res_scale) # Skip connection인데 이걸 활용하면 Loss가 발산.
-        #res += x
+        res += x
         return res
 
 ## Residual Group (RG)
@@ -127,7 +127,7 @@ class ResidualGroup(nn.Module):
 
     def forward(self, x):
         res = self.body(x)
-        #res += x
+        res += x
         return res
 
 ## Holistic Attention Network (HAN)
@@ -144,10 +144,10 @@ class HAN_RAW(nn.Module):
         act = nn.ReLU(True)
         
         # mean for zoom raw and zoom rgb
-        raw_mean = (3.7376e-02, 8.3722e-02, 2.6351e+08, 8.3683e-02)
-        raw_std = (0.0402, 0.0873, 0.0526, 0.0873)
-        rgb_mean = (0.4038, 0.3844, 0.3503)
-        rgb_std = (0.2207, 0.2100, 0.2095)
+        raw_mean = (0.03737605, 0.08372876, 0.04531155, 0.08369022)
+        raw_std = (0.0401957,  0.08711925, 0.05252944, 0.08709146)
+        rgb_mean = (0.40154728, 0.38442093, 0.3503211)
+        rgb_std = (0.22059913, 0.20982597, 0.20942755)
         self.sub_mean = common.MeanShift_Raw(args.rgb_range, raw_mean, raw_std)
         
         # define head module
@@ -180,7 +180,7 @@ class HAN_RAW(nn.Module):
         self.tail = nn.Sequential(*modules_tail)
 
     def forward(self, x):
-        x = self.sub_mean(x)
+        #x = self.sub_mean(x)
         x = self.head(x)
         res = x
 
@@ -198,9 +198,9 @@ class HAN_RAW(nn.Module):
         out = torch.cat([out1, out2], 1)
         res = self.last(out)
         
-        #res += x
+        res += x
         x = self.tail(res)
-        x = self.add_mean(x)
+        #x = self.add_mean(x)
 
         return x 
 

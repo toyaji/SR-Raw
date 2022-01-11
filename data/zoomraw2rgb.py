@@ -42,14 +42,14 @@ class ZoomRaw2RGB(SRData):
         black_lv=512; white_lv=16383
         with rawpy.imread(str(f_hr)) as r:
             hr_bayer = r.raw_image_visible.astype(np.float32)
-            hr_bayer = (hr_bayer - black_lv) / (white_lv - black_lv)
-            #wb = common.compute_wb(r)
             hr_rgb = r.postprocess(no_auto_bright=False, use_camera_wb=True, output_bps=8)
-            hr_raw = common.get_4ch(hr_bayer)
-        
-            h, w = hr_raw.shape[:2]
-            lr_raw = cv2.resize(hr_raw, (w // self.scale, h // self.scale), interpolation=cv2.INTER_LINEAR)
-            hr_rgb = hr_rgb / 255
+            #wb = common.compute_wb(r)
+            
+        hr_bayer = (hr_bayer - black_lv) / (white_lv - black_lv)
+        hr_raw = common.get_4ch(hr_bayer)
+        h, w = hr_raw.shape[:2]
+        lr_raw = cv2.resize(hr_raw, (w // self.scale, h // self.scale), interpolation=cv2.INTER_LINEAR)
+        hr_rgb = hr_rgb / 255
         return lr_raw, hr_rgb, filename
 
     def get_patch(self, lr, hr):

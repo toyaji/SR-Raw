@@ -159,7 +159,14 @@ def get_4ch(bayer):
     rgba[:, :, 1] = bayer[1::2, 0::2]  # G1
     rgba[:, :, 2] = bayer[1::2, 1::2]  # B
     rgba[:, :, 3] = bayer[0::2, 1::2]  # G2
+    return rgba
 
+def get_3ch(bayer):
+    h, w = bayer.shape[:2]
+    rgba = np.zeros((h // 2, w // 2, 3), dtype=np.float32)
+    rgba[:, :, 0] = bayer[0::2, 0::2]  # R
+    rgba[:, :, 1] = (bayer[1::2, 0::2] + bayer[0::2, 1::2]) / 2 # G1 + G2
+    rgba[:, :, 2] = bayer[1::2, 1::2]  # B
     return rgba
 
 def get_1ch(raw):
