@@ -6,11 +6,14 @@ import torch
 import pytorch_lightning as pl
 from torch import Tensor
 from torch.nn import functional as F
+from torch.nn import Sequential, Conv2d
 from torch.optim import Adam, AdamW, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
 from pytorch_lightning.metrics.functional import ssim as _ssim
 from torchmetrics import SSIM, PSNR
 from importlib import import_module
+
+from model.color_corrector import ColorCorrector
 
 # You can adjust following chop size fit to your GPU memory.
 CHOP_SIZE = {"HAN" : 160000, "CSNLN" : 4500, "HAN_RAW" : 160000,}
@@ -60,47 +63,8 @@ class LitModel(pl.LightningModule):
         self.test_ssim = SSIM()
 
     def forward(self, x):
-        return self.model(x)
-
-    """
-    def forward_chop(self, x, shave=10, min_size=160000):
-        # it work for only batch size of 1
-        scale = self.scale
-        b, c, h, w = x.size()
-        h_half, w_half = h // 2, w // 2
-        h_size, w_size = h_half + shave, w_half + shave
-        # consider odd size
-        h_size += scale-h_size%scale
-        w_size += scale-w_size%scale
-        lr_list = [
-            x[:, :, 0:h_size, 0:w_size],
-            x[:, :, 0:h_size, (w - w_size):w],
-            x[:, :, (h - h_size):h, 0:w_size],
-            x[:, :, (h - h_size):h, (w - w_size):w]]
-
-        if w_size * h_size < min_size:
-            lr_batch = torch.cat(lr_list)
-            sr_batch = self.model(lr_batch)
-        else:
-            sr_batch = torch.cat([
-                self.forward_chop(patch, shave=shave, min_size=min_size) \
-                for patch in lr_list
-            ], dim=0)
-
-        # multiply 2 because bayer size needs to be 2 times
-        h, w = scale * h * 2, scale * w * 2
-        h_half, w_half = scale * h_half * 2, scale * w_half * 2
-        h_size, w_size = scale * h_size * 2, scale * w_size * 2
-        shave *= scale
-
-        output = x.new(b, c-1, h, w) # channerl reducted from raw 4ch to rgb 3ch
-        output[:, :, 0:h_half, 0:w_half] = sr_batch[0:b, :, 0:h_half, 0:w_half]
-        output[:, :, 0:h_half, w_half:w] = sr_batch[b:b*2, :, 0:h_half, (w_size - w + w_half):w_size]
-        output[:, :, h_half:h, 0:w_half] = sr_batch[b*2:b*3, :, (h_size - h + h_half):h_size, 0:w_half]
-        output[:, :, h_half:h, w_half:w] = sr_batch[b*3:b*4, :, (h_size - h + h_half):h_size, (w_size - w + w_half):w_size]
-
-        return output
-    """
+        sr = self.model(x)
+        return sr
 
     def forward_chop(self, x, auto_shave=True, shave_feed=16, shave=(10, 10), min_size=160000):
         # it work for only batch size of 1

@@ -26,18 +26,19 @@ model:
   reduction: 16
   n_colors: 3
   res_scale: 1
+  corrector:
+    matching_type: 'correlation'
 
 trainer:                       
   gpus: 1
   max_epochs: 450
   accumulate_grad_batches: 2
   gradient_clip_val: 0.5
-  #check_val_every_n_epoch: 3
-  #limit_val_batches: 0.5
+  #check_val_every_n_epoch: 2
+  limit_val_batches: 0.5
   #profiler: "pytorch"
-  #log_gpu_memory: "all"
-  resume_from_checkpoint : "logs/kth_test_ramadd/log_2112271738/checkpoints/epoch=23-step=695.ckpt"
-  #resume_from_checkpoint: "logs/adamW07_rgb01_v2/20210914/checkpoints/epoch=98-step=6236.ckpt"
+  log_gpu_memory: "all"
+  #resume_from_checkpoint : "logs/test_nomeanshift/log_2201040922/checkpoints/epoch=118-step=3450.ckpt"
   #fast_dev_run: 1          # This is for test - it will cause error for validation step
 
 callback:

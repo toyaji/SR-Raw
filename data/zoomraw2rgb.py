@@ -22,19 +22,22 @@ class ZoomRaw2RGB(SRData):
         assert self.apath.exists(), "Given base data dir path is wrong!: {}".format(self.apath)
 
         if self.train:
-            self.dir_hr = self.apath / 'train' / 'raw_HR'
+            self.raw_hr = self.apath / 'train' / 'raw_HR'
+            self.rgb_hr = self.apath / 'train' / 'rgb_HR'
         elif self.train and self.val:
-            self.dir_hr = self.apath / 'test' / 'raw_HR' 
+            self.raw_hr = self.apath / 'test' / 'raw_HR' 
+            self.rgb_hr = self.apath / 'test' / 'rgb_HR' 
         else:
-            self.dir_hr = self.apath / 'test' / 'raw_HR' 
+            self.raw_hr = self.apath / 'test' / 'raw_HR' 
+            self.rgb_hr = self.apath / 'test' / 'rgb_HR' 
             self.patch_size = -1   
 
-        assert self.dir_hr.exists(), "HR input data path does not exist!"
+        assert self.raw_hr.exists(), "HR input data path does not exist!"
 
         self.ext = ("ARW", "ARW")
 
     def _scan(self):
-        self.hr_pathes = sorted(list(self.dir_hr.glob("*." + self.ext[0])))
+        self.hr_pathes = sorted(list(self.raw_hr.glob("*." + self.ext[0])))
 
     def _load_file(self, idx):
         f_hr = self.hr_pathes[idx]

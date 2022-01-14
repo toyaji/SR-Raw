@@ -1,6 +1,8 @@
 from model import common_han as common
+from model.color_corrector import ColorCorrector
 import torch
 import torch.nn as nn
+
 
 ## Channel Attention (CA) Layer
 class CALayer(nn.Module):
@@ -179,10 +181,15 @@ class HAN_RAW(nn.Module):
         self.last = nn.Conv2d(n_feats*2, n_feats, 3, 1, 1)
         self.tail = nn.Sequential(*modules_tail)
 
+        self.front_corrector = ColorCorrector(n_feats)
+        self.final_corrector = ColorCorrector(n_feats)
+
     def forward(self, x):
         #x = self.sub_mean(x)
         x = self.head(x)
         res = x
+
+        res = self.front_corrector(res)
 
         for name, midlayer in self.body._modules.items():
             res = midlayer(res)
@@ -199,6 +206,7 @@ class HAN_RAW(nn.Module):
         res = self.last(out)
         
         res += x
+        res = self.final_corrector(res)
         x = self.tail(res)
         #x = self.add_mean(x)
 
