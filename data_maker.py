@@ -93,7 +93,7 @@ if __name__ == "__main__":
     data_dir = Path(r"/data/paul/")
     out_dir = Path(r"/data/paul/")
 
-    (out_dir / "train").mkdir(parents=True, exist_ok=True)
+    (out_dir / args.path / "train").mkdir(parents=True, exist_ok=True)
     (out_dir / args.path / "test").mkdir(parents=True, exist_ok=True)
 
     train_files = sorted(list((data_dir / "train" ).rglob("*.ARW")))
@@ -107,8 +107,8 @@ if __name__ == "__main__":
     test_rgb_files = [(file.parent / f"{file.stem}.JPG") for file in test_files]
 
 
-    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / "train", num_patches=args.n_patch, patch_size=96)
+    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "train", num_patches=args.n_patch, patch_size=96)
     process_map(func, train_files, max_workers=12, chunksize=24, desc="Train data creating...")
 
-    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / "test", num_patches=args.n_patch, patch_size=96)
+    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "test", num_patches=args.n_patch, patch_size=96)
     process_map(func, train_files, max_workers=12, chunksize=24, desc="Test data creating...")
