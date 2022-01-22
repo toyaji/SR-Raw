@@ -1,12 +1,11 @@
-import os
 import math
 from pathlib import Path
 import cv2
 import torch
+import numpy as np
 import pytorch_lightning as pl
 from torch import Tensor
 from torch.nn import functional as F
-from torch.nn import Sequential, Conv2d
 from torch.optim import Adam, AdamW, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
 from pytorch_lightning.metrics.functional import ssim as _ssim
@@ -134,15 +133,19 @@ class LitModel(pl.LightningModule):
         return [optimazier], [lr_scheduler]
 
     def training_step(self, batch, batch_idx):
-        x, y, _ = batch
+        x, y, wb, _ = batch
+        b, c, _, _ = y.size()
         sr = self(x)
+        sr *= torch.pow(torch.tensor(wb), 1/2.2).view(b, c, 1, 1)
         loss = self.loss(sr, y)
         self.log('train/loss', loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y, _ = batch
+        x, y, wb, _ = batch
+        b, c, _, _ = y.size()
         sr = self(x)
+        sr *= torch.pow(torch.tensor(wb), 1/2.2).view(b, c, 1, 1)
         loss = self.loss(sr, y)
         sr = self._quantize(sr, self.rgb_range)
         psnr = self._psnr(sr, y, self.scale, self.rgb_range)
@@ -157,9 +160,11 @@ class LitModel(pl.LightningModule):
         self.val_ssim.reset()
 
     def test_step(self, batch, batch_idx, dataloader_idx=0):
-        x, y, filename = batch
+        x, y, wb, filename = batch
+        b, c, _, _ = y.size()
         dataset_name = self.test_data[dataloader_idx]
         sr = self.forward_chop(x, min_size=self.chop_size)
+        sr *= torch.pow(torch.tensor(wb), 1/2.2).view(b, c, 1, 1)
         sr = self._quantize(sr, self.rgb_range)
         psnr = self._psnr(sr, y, self.scale, self.rgb_range)
         ssim = self.test_ssim(sr, y)

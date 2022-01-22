@@ -27,7 +27,6 @@ def compute_wb(raw):
     wb = [
         np.mean(rgb_wb[..., 0]) / np.mean(rgb_nowb[..., 0]),
         np.mean(rgb_wb[..., 1]) / np.mean(rgb_nowb[..., 1]),
-        np.mean(rgb_wb[..., 1]) / np.mean(rgb_nowb[..., 1]),
         np.mean(rgb_wb[..., 2]) / np.mean(rgb_nowb[..., 2]),
     ]
     wb = np.array(wb, dtype=np.float32)
@@ -68,18 +67,21 @@ def _T_make_data(raw_path, scale, out_dir, num_patches, patch_size):
 
     lr_raw, hr_rgb, wb = make_data(raw_path, scale)
     #print("Start patching... :", lr_raw.shape)
-    for i in range(num_patches):
-        h, w = lr_raw.shape[:2]
-        p = patch_size
-        pos_x, pos_y = random.randint(0, w - p), random.randint(0, h - p)
+    if patch_size == -1:
+        fpath = out_dir / f"{raw_path.parent.name}_{raw_path.stem}.npz"
+        np.savez_compressed(fpath, lr_raw=lr_raw, hr_rgb=hr_rgb, wb=wb)
+        
+    else:
+        for i in range(num_patches):
+            h, w = lr_raw.shape[:2]
+            p = patch_size
+            pos_x, pos_y = random.randint(0, w - p), random.randint(0, h - p)
 
-        lr_raw_patch = lr_raw[pos_y : pos_y + p, pos_x : pos_x + p]
-        hr_rgb_patch = hr_rgb[pos_y * scale * 2 : (pos_y + p) * scale * 2, pos_x * scale * 2 : (pos_x + p) * scale * 2]
-        hr_rgb_patch = hr_rgb_patch.astype(np.float32) / 255
-        fpath = out_dir / f"{raw_path.parent.name}_{raw_path.stem}_{i:02d}.npz"
-        np.savez_compressed(fpath, lr_raw=lr_raw_patch, hr_rgb=hr_rgb_patch, wb=wb)
-
-    return raw_path
+            lr_raw_patch = lr_raw[pos_y : pos_y + p, pos_x : pos_x + p]
+            hr_rgb_patch = hr_rgb[pos_y * scale * 2 : (pos_y + p) * scale * 2, pos_x * scale * 2 : (pos_x + p) * scale * 2]
+            hr_rgb_patch = hr_rgb_patch.astype(np.float32) / 255
+            fpath = out_dir / f"{raw_path.parent.name}_{raw_path.stem}_{i:02d}.npz"
+            np.savez_compressed(fpath, lr_raw=lr_raw_patch, hr_rgb=hr_rgb_patch, wb=wb)
 
 
 if __name__ == "__main__":
@@ -94,21 +96,28 @@ if __name__ == "__main__":
     out_dir = Path(r"/data/paul/")
 
     (out_dir / args.path / "train").mkdir(parents=True, exist_ok=True)
+    (out_dir / args.path / "val").mkdir(parents=True, exist_ok=True)
     (out_dir / args.path / "test").mkdir(parents=True, exist_ok=True)
 
     train_files = sorted(list((data_dir / "train" ).rglob("*.ARW")))
+    val_files = sorted(list((data_dir / "test" ).rglob("*.ARW")))
     test_files = sorted(list((data_dir / "test" ).rglob("*.ARW")))
 
     # JPG 파일들. ARW만 있고, JPG는 없는 경우 제외
     train_files = list(filter(lambda file: (file.parent / f"{file.stem}.JPG").exists(), train_files))
+    val_files = list(filter(lambda file: (file.parent / f"{file.stem}.JPG").exists(), val_files))
     test_files = list(filter(lambda file: (file.parent / f"{file.stem}.JPG").exists(), test_files))
 
     train_rgb_files = [(file.parent / f"{file.stem}.JPG") for file in train_files]
+    val_rgb_files = [(file.parent / f"{file.stem}.JPG") for file in val_files]
     test_rgb_files = [(file.parent / f"{file.stem}.JPG") for file in test_files]
 
 
-    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "train", num_patches=args.n_patch, patch_size=96)
+    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "train", num_patches=args.n_patch, patch_size=-1)
     process_map(func, train_files, max_workers=12, chunksize=24, desc="Train data creating...")
 
-    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "test", num_patches=args.n_patch, patch_size=96)
-    process_map(func, train_files, max_workers=12, chunksize=24, desc="Test data creating...")
+    #func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "val", num_patches=args.n_patch, patch_size=-1)
+    #process_map(func, val_files, max_workers=12, chunksize=24, desc="Test data creating...")
+
+    func = partial(_T_make_data, scale=args.scale, out_dir=out_dir / args.path / "test", num_patches=args.n_patch, patch_size=-1)
+    process_map(func, test_files, max_workers=12, chunksize=24, desc="Test data creating...")
