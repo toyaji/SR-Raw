@@ -178,3 +178,23 @@ def get_1ch(raw):
     bayer[0::2, 1::2] = raw[..., 3]
 
     return bayer
+
+def compute_wb(raw):
+    # print("Computing WB for %s" % (raw_path))
+    if isinstance(raw, str) or isinstance(raw, Path):
+        bayer = rawpy.imread(str(raw))
+    else:
+        bayer = raw  # rawpy object일 경우
+
+    # bayer = rawpy.imread(raw_path)
+    rgb_nowb = bayer.postprocess(gamma=(1, 1), no_auto_bright=True, use_camera_wb=False, output_bps=16)
+
+    rgb_wb = bayer.postprocess(gamma=(1, 1), no_auto_bright=True, use_camera_wb=True, output_bps=16)
+
+    wb = [
+        np.mean(rgb_wb[..., 0]) / np.mean(rgb_nowb[..., 0]),
+        np.mean(rgb_wb[..., 1]) / np.mean(rgb_nowb[..., 1]),
+        np.mean(rgb_wb[..., 2]) / np.mean(rgb_nowb[..., 2]),
+    ]
+    wb = np.array(wb, dtype=np.float32)
+    return wb

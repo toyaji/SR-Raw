@@ -189,7 +189,7 @@ class HAN_RAW(nn.Module):
         x = self.head(x)
         res = x
 
-        res = self.front_corrector(res)
+        #res = self.front_corrector(res)
 
         for name, midlayer in self.body._modules.items():
             res = midlayer(res)
@@ -206,7 +206,7 @@ class HAN_RAW(nn.Module):
         res = self.last(out)
         
         res += x
-        res = self.final_corrector(res)
+        #res = self.final_corrector(res)
         x = self.tail(res)
         #x = self.add_mean(x)
 

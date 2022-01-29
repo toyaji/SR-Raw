@@ -51,7 +51,7 @@ def make_data(raw_path, scale, black_lv=512, white_lv=16383):
         wb = compute_wb(r)
 
         hr_rgb = r.postprocess(no_auto_bright=False, use_camera_wb=True, output_bps=8)
-        #hr_rgb = r.postprocess(gamma=(1, 1), no_auto_bright=True, output_bps=8)
+        #hr_rgb = r.postprocess(gamma=(1, 1), no_auto_bright=True, use_camera_wb=True, output_bps=8)
         # hr_rgb = imageio.imread(rgb_path)
         # hr_bayer = hr_bayer[8:-8, 8:-8]
 

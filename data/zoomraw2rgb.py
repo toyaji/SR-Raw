@@ -39,6 +39,13 @@ class ZoomRaw2RGB(SRData):
     def _scan(self):
         self.hr_pathes = sorted(list(self.raw_hr.glob("*." + self.ext[0])))
 
+    def __getitem__(self, idx):
+        lr, hr, wb, filename = self._load_file(idx)
+        pair = self.get_patch(lr, hr)
+        pair = common.set_channel(*pair, n_channels=self.n_colors)
+        pair_t = common.np2Tensor(*pair, rgb_range=self.rgb_range)
+        return pair_t[0], pair_t[1], wb, filename
+
     def _load_file(self, idx):
         f_hr = self.hr_pathes[idx]
         filename = f_hr.name
@@ -46,14 +53,14 @@ class ZoomRaw2RGB(SRData):
         with rawpy.imread(str(f_hr)) as r:
             hr_bayer = r.raw_image_visible.astype(np.float32)
             hr_rgb = r.postprocess(no_auto_bright=False, use_camera_wb=True, output_bps=8)
-            #wb = common.compute_wb(r)
+            wb = common.compute_wb(r)
             
         hr_bayer = (hr_bayer - black_lv) / (white_lv - black_lv)
         hr_raw = common.get_4ch(hr_bayer)
         h, w = hr_raw.shape[:2]
         lr_raw = cv2.resize(hr_raw, (w // self.scale, h // self.scale), interpolation=cv2.INTER_LINEAR)
         hr_rgb = hr_rgb / 255
-        return lr_raw, hr_rgb, filename
+        return lr_raw, hr_rgb, wb, filename
 
     def get_patch(self, lr, hr):
         scale = self.scale * 2

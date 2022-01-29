@@ -15,7 +15,7 @@ from importlib import import_module
 from model.color_corrector import ColorCorrector
 
 # You can adjust following chop size fit to your GPU memory.
-CHOP_SIZE = {"HAN" : 160000, "CSNLN" : 4500, "HAN_RAW" : 160000,}
+CHOP_SIZE = {"HAN" : 160000, "CSNLN" : 4500, "HAN_RAW" : 10000,}
 
 class LitModel(pl.LightningModule):
     def __init__(self, model_params, opt_params, sch_params, data_params) -> None:
@@ -60,6 +60,7 @@ class LitModel(pl.LightningModule):
         # metrics
         self.val_ssim = SSIM()
         self.test_ssim = SSIM()
+        self.test_psnr = PSNR()
 
     def forward(self, x):
         sr = self.model(x)
@@ -146,8 +147,8 @@ class LitModel(pl.LightningModule):
         b, c, _, _ = y.size()
         sr = self(x)
         sr *= torch.pow(torch.tensor(wb), 1/2.2).view(b, c, 1, 1)
-        loss = self.loss(sr, y)
         sr = self._quantize(sr, self.rgb_range)
+        loss = self.loss(sr, y)
         psnr = self._psnr(sr, y, self.scale, self.rgb_range)
         ssim = self.val_ssim(sr, y)
 
@@ -167,15 +168,18 @@ class LitModel(pl.LightningModule):
         sr *= torch.pow(torch.tensor(wb), 1/2.2).view(b, c, 1, 1)
         sr = self._quantize(sr, self.rgb_range)
         psnr = self._psnr(sr, y, self.scale, self.rgb_range)
+        psnr2 = self.test_psnr(sr, y)
+        self.test_ssim.reset()
         ssim = self.test_ssim(sr, y)
 
         self.log('test/{}/psnr'.format(dataset_name), psnr, prog_bar=True)
+        self.log('test/{}/psnr2'.format(dataset_name), psnr2, prog_bar=True)
         self.log('test/{}/ssim'.format(dataset_name), ssim, prog_bar=True)
 
         if self.save_test_img:
             self._img_save(sr.clone().detach(), filename[0], dataset_name)
 
-        return psnr, ssim
+        return psnr, psnr2, ssim
 
     def test_epoch_end(self, outputs) -> None:
         # to prevent memory leak 
