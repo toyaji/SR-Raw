@@ -20,9 +20,11 @@ def load_config_from_args():
     args.add_argument("-b", "--batch", type=int, help="Batch size for data laoder.")
     args.add_argument("-s", "--scale", type=int, help="Scale factor.")
     args.add_argument("-w", "--workers", type=int, help="Number of worker for dataload")
+    args.add_argument("--xcolor", action='store_true', help='remove color corrector module in model')
     args.add_argument("--chop_size", type=int, help="For test forward, we need to chop the input according to its memory capability.")
-    args.add_argument("--test_only", type=bool, help='set this option to test the model')
-    args.add_argument("--save_imgs", type=bool, help='set this option to test the model')
+    args.add_argument("--test_only", action='store_true', help='set this option to test the model')
+    args.add_argument("--save_imgs", action='store_true', help='set this option to test the model')
+    args.add_argument("--ckpt_path", type=str, help='ckpt path for training restart or test only')
     args = args.parse_args(sys.argv[1:])
     
     config = load_config(args.config)
@@ -35,6 +37,12 @@ def load_config_from_args():
     if args.batch is not None:
         config.dataset.batch_size = args.batch
 
+    if args.scale is not None:
+        config.dataset.args.scale = args.scale
+    
+    if args.xcolor is not None:
+        config.dataset.args.xcolor = args.xcolor
+
     if args.workers is not None:
         config.dataset.num_workers = args.workers
 
@@ -43,6 +51,9 @@ def load_config_from_args():
     
     if args.save_imgs is not None:
         config.dataset.save_test_img = args.save_imgs
+
+    if args.ckpt_path is not None:
+        config.trainer.resume_from_checkpoint = args.ckpt_path
         
     config.model.chop_size = args.chop_size
 

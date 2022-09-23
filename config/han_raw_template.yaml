@@ -14,11 +14,12 @@ dataset:
   args:
     dir: "dataset"
     patch_size: 96
-    scale: 2
+    scale: 4
     rgb_range: 1
 
 model:
   net: 'HAN_RAW'
+  xcolor: True
   pretrain: False       
   n_resgroups: 10
   n_resblocks: 20
@@ -37,9 +38,17 @@ trainer:
   #check_val_every_n_epoch: 2
   limit_val_batches: 0.5
   #profiler: "pytorch"
-  log_gpu_memory: "all"
-  #resume_from_checkpoint : "logs/test_nomeanshift/log_2201040922/checkpoints/epoch=118-step=3450.ckpt"
+  #log_gpu_memory: "all"
   #fast_dev_run: 1          # This is for test - it will cause error for validation step
+
+  #################### best ckpt ###################  # ckpt should accord with scale and xcolor settings
+
+  resume_from_checkpoint : "logs/ocolor/log_2207151847/checkpoints/epoch=446-step=12963.ckpt"  # with color corrector / x4
+  # resume_from_checkpoint : "logs/ocolorx8/log_2207201010/checkpoints/epoch=415-step=12064.ckpt"  # with color corrector / x8
+  # resume_from_checkpoint : "logs/xcolor/log_2207141442/checkpoints/epoch=321-step=4830.ckpt"  # without color corrector / x4
+  # resume_from_checkpoint : "logs/xcolorx8/log_2207250917/checkpoints/epoch=435-step=12644.ckpt"  # without color corrector / x8
+
+  ##################################################
 
 callback:
   save_top_k: 5

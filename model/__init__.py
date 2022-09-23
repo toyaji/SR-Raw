@@ -8,8 +8,8 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.optim import Adam, AdamW, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
-from pytorch_lightning.metrics.functional import ssim as _ssim
-from torchmetrics import SSIM, PSNR
+from torchmetrics import StructuralSimilarityIndexMeasure as SSIM
+from torchmetrics import PeakSignalNoiseRatio as PSNR
 from importlib import import_module
 
 from model.color_corrector import ColorCorrector

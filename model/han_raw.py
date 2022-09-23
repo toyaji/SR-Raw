@@ -144,6 +144,7 @@ class HAN_RAW(nn.Module):
         reduction = args.reduction 
         scale = args.scale
         act = nn.ReLU(True)
+        self.xcorlor = args.xcolor 
         
         # mean for zoom raw and zoom rgb
         raw_mean = (0.03737605, 0.08372876, 0.04531155, 0.08369022)
@@ -189,7 +190,8 @@ class HAN_RAW(nn.Module):
         x = self.head(x)
         res = x
 
-        #res = self.front_corrector(res)
+        if not self.xcorlor:
+            res = self.front_corrector(res)
 
         for name, midlayer in self.body._modules.items():
             res = midlayer(res)
@@ -206,7 +208,10 @@ class HAN_RAW(nn.Module):
         res = self.last(out)
         
         res += x
-        #res = self.final_corrector(res)
+
+        if not self.xcorlor:
+            res = self.final_corrector(res)
+        
         x = self.tail(res)
         #x = self.add_mean(x)
 
