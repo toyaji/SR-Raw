@@ -20,7 +20,7 @@ def main(config):
     model = LitModel(config.model, config.optimizer, config.scheduler, config.dataset)
 
     # instantiate trainer
-    logger = TensorBoardLogger('logs/', **config.log)
+    logger = TensorBoardLogger('/media/vcl/paul/logs', **config.log)  # log path change : log/ -> /media/vcl/paul/logs
 
     if config.log.log_graph:
         logger.log_graph(model, torch.zeros(1, 3, 64, 64).cuda())
