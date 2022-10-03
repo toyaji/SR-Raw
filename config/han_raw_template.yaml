@@ -51,7 +51,7 @@ trainer:
   ##################################################
 
 callback:
-  save_top_k: 5
+  save_top_k: 50
   earlly_stop_patience: 100
   min_delta: 1.0e-4
 
