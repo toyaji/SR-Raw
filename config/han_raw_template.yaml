@@ -2,6 +2,7 @@ log:
   name: '20210916'
   version: 'test_1'
   log_graph: False
+  save_dir: '/media/vcl/paul/logs'
 
 dataset:
   train_data: ["ZoomRaw2RGB", ]              # DIV2K, BSD500, ...

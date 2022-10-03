@@ -20,7 +20,7 @@ def main(config):
     model = LitModel(config.model, config.optimizer, config.scheduler, config.dataset)
 
     # instantiate trainer
-    logger = TensorBoardLogger('/media/vcl/paul/logs', **config.log)  # log path change : log/ -> /media/vcl/paul/logs
+    logger = TensorBoardLogger(**config.log)  # log path change : log/ -> /media/vcl/paul/logs
 
     if config.log.log_graph:
         logger.log_graph(model, torch.zeros(1, 3, 64, 64).cuda())
@@ -42,7 +42,10 @@ def main(config):
     
     # start training!
     trainer.fit(model, dm)
-    trainer.test(model, datamodule=dm, ckpt_path='best')
+    if config.dataset.test_only:
+        trainer.test(model, datamodule=dm, ckpt_path=config.trainer.resume_from_checkpoint)
+    else:
+        trainer.test(model, datamodule=dm, ckpt_path='best')
 
 
     
